@@ -1,0 +1,1076 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Профессиональный психологический тест для оценки нарциссизма, нервозности и эмоционального состояния с интерактивными элементами.">
+  <title>Психологический тест: Путь к самопониманию</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #ffffff;
+      color: #1a202c;
+      line-height: 1.7;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      background: #ffffff;
+      border-radius: 24px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+      max-width: 900px;
+      width: 100%;
+      padding: 48px;
+      margin: 24px;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+      position: relative;
+      animation: fadeInContainer 0.8s ease;
+    }
+
+    .container:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
+    }
+
+    h1 {
+      color: #2d3748;
+      font-size: 34px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #4a5568;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    p {
+      color: #718096;
+      font-size: 16px;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .btn {
+      background: linear-gradient(90deg, #4299e1, #9f7aea);
+      color: #ffffff;
+      padding: 14px 40px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover, .btn:focus {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      outline: none;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s ease, height 0.4s ease;
+    }
+
+    .btn:active::after {
+      width: 200px;
+      height: 200px;
+    }
+
+    .question {
+      margin: 40px 0;
+      text-align: left;
+      animation: slideInQuestion 0.5s ease;
+    }
+
+    .question p {
+      font-size: 20px;
+      font-weight: 500;
+      color: #2d3748;
+      margin-bottom: 20px;
+    }
+
+    .options {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+      animation: fadeInOptions 0.6s ease;
+    }
+
+    .option {
+      background: #f7fafc;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex: 1;
+      text-align: center;
+      min-width: 80px;
+      max-width: 200px;
+      position: relative;
+    }
+
+    .option:hover, .option:focus {
+      background: #e2e8f0;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .option.selected {
+      background: #9f7aea;
+      color: #ffffff;
+    }
+
+    .tooltip {
+      position: absolute;
+      background: #2d3748;
+      color: #ffffff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      z-index: 10;
+    }
+
+    .option:hover .tooltip, .option:focus .tooltip {
+      display: block;
+    }
+
+    .progress-container {
+      margin-bottom: 32px;
+      text-align: center;
+      position: relative;
+    }
+
+    .progress-circle {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto;
+    }
+
+    .progress-circle svg {
+      transform: rotate(-90deg);
+    }
+
+    .progress-circle circle {
+      fill: none;
+      stroke: #e2e8f0;
+      stroke-width: 8;
+    }
+
+    .progress-circle .progress {
+      stroke: url(#progressGradient);
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .progress-text {
+      font-size: 14px;
+      color: #718096;
+      margin-top: 12px;
+      font-weight: 500;
+    }
+
+    .results {
+      margin-top: 32px;
+    }
+
+    .result-block {
+      background: #f7fafc;
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .result-block:hover {
+      transform: translateY(-4px);
+    }
+
+    .result-block h3 {
+      color: #2d3748;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .result-bar {
+      height: 20px;
+      border-radius: 10px;
+      margin-top: 16px;
+      transition: width 0.6s ease;
+    }
+
+    .narcissism { background: #9f7aea; }
+    .nervousness { background: #4299e1; }
+    .emotional { background: #b794f4; }
+
+    .recommendation {
+      font-size: 15px;
+      color: #4a5568;
+      margin-top: 16px;
+      line-height: 1.8;
+    }
+
+    .chart-container {
+      margin: 32px 0;
+      padding: 24px;
+      background: #f7fafc;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    canvas {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .export-btn, .share-btn {
+      background: #4a5568;
+    }
+
+    .export-btn:hover, .share-btn:hover {
+      background: #2d3748;
+    }
+
+    .reaction-test {
+      margin: 40px 0;
+      text-align: center;
+    }
+
+    .reaction-btn {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 16px;
+      position: relative;
+    }
+
+    .reaction-btn.active {
+      background: #9f7aea;
+      animation: pulse 1s infinite;
+    }
+
+    .reaction-btn.shape {
+      border-radius: 0;
+    }
+
+    .ranking-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 10px;
+    }
+
+    .ranking-option {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: move;
+      transition: transform 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .ranking-option.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+    }
+
+    .reflection-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-top: 20px;
+      resize: vertical;
+    }
+
+    .mood-tracker {
+      margin: 20px 0;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .mood-option {
+      display: inline-block;
+      margin: 8px;
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .mood-option.selected {
+      transform: scale(1.2);
+    }
+
+    .breathing-animation {
+      margin: 40px auto;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #4299e1;
+      animation: breathe 4s ease-in-out infinite;
+      display: none;
+    }
+
+    .loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #9f7aea, #4299e1);
+      animation: ripple 1.5s infinite;
+      display: none;
+    }
+
+    @keyframes fadeInContainer {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideInQuestion {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInOptions {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes breathe {
+      0% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.8; }
+    }
+
+    @keyframes ripple {
+      0% { transform: scale(1); opacity: 0.5; }
+      100% { transform: scale(2); opacity: 0; }
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 24px;
+        margin: 16px;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      .question p {
+        font-size: 18px;
+      }
+
+      .options {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .option {
+        padding: 12px;
+        font-size: 15px;
+        max-width: none;
+      }
+
+      .btn {
+        padding: 12px 32px;
+        font-size: 15px;
+      }
+
+      .result-block {
+        padding: 16px;
+      }
+
+      .reaction-btn {
+        width: 80px;
+        height: 80px;
+      }
+    }
+
+    [aria-hidden="true"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app" role="main">
+    <div class="loader" id="loader"></div>
+    <div id="start-screen">
+      <h1>Путь к самопониманию</h1>
+      <h2>Психологический тест</h2>
+      <p>Погрузитесь в путешествие к самопознанию с этим профессиональным тестом. Ответьте на 50 уникальных заданий, чтобы получить глубокий анализ вашей самооценки, уровня стресса и эмоционального состояния. Ваши чувства — это ключ к внутренней гармонии.</p>
+      <div class="mood-tracker">
+        <p>Какое у вас настроение сейчас?</p>
+        <span class="mood-option" onclick="selectMood('😊')" role="button" aria-label="Настроение: счастливое">😊</span>
+        <span class="mood-option" onclick="selectMood('😐')" role="button" aria-label="Настроение: нейтральное">😐</span>
+        <span class="mood-option" onclick="selectMood('😔')" role="button" aria-label="Настроение: грустное">😔</span>
+      </div>
+      <button class="btn" onclick="startTest()" aria-label="Начать психологический тест">Начать тест</button>
+    </div>
+    <div id="quiz-screen" aria-hidden="true">
+      <div class="progress-container">
+        <div class="progress-circle">
+          <svg width="80" height="80">
+            <defs>
+              <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#4299e1" />
+                <stop offset="100%" style="stop-color:#9f7aea" />
+              </linearGradient>
+            </defs>
+            <circle cx="40" cy="40" r="36" />
+            <circle class="progress" id="progress" cx="40" cy="40" r="36" stroke-dasharray="226" stroke-dashoffset="226" />
+          </svg>
+        </div>
+        <p class="progress-text" id="progress-text">Задание 1 из 50</p>
+      </div>
+      <div class="question" id="question" role="region" aria-live="polite"></div>
+      <div class="options" id="options" role="radiogroup"></div>
+      <div class="reaction-test" id="reaction-test" aria-hidden="true">
+        <p id="reaction-prompt"></p>
+        <button class="reaction-btn" id="reaction-btn" onclick="recordReaction()" aria-label="Кнопка для теста реакции"></button>
+      </div>
+      <div class="ranking-options" id="ranking-options" aria-hidden="true" role="listbox"></div>
+      <textarea class="reflection-input" id="reflection-input" aria-hidden="true" placeholder="Опишите свои мысли..." aria-label="Поле для рефлексии"></textarea>
+      <div class="breathing-animation" id="breathing-animation" aria-hidden="true"></div>
+      <button class="btn" id="next-btn" style="display: none;" onclick="nextQuestion()" aria-label="Перейти к следующему вопросу">Далее</button>
+    </div>
+    <div id="result-screen" aria-hidden="true">
+      <h1>Ваши результаты</h1>
+      <h2>Ваш путь к самопониманию</h2>
+      <p>Эти результаты — ваш личный компас для лучшего понимания себя. Используйте их, чтобы заботиться о своём ментальном здоровье и находить внутренний баланс.</p>
+      <div class="chart-container">
+        <canvas id="result-chart" role="img" aria-label="Радарная диаграмма результатов теста"></canvas>
+      </div>
+      <div class="results" id="results"></div>
+      <button class="btn export-btn" onclick="exportResults()" aria-label="Экспортировать результаты в HTML">Экспортировать результаты</button>
+      <button class="btn share-btn" onclick="shareResults()" aria-label="Поделиться результатами">Поделиться</button>
+      <button class="btn" onclick="restartTest()" aria-label="Пройти тест заново">Пройти заново</button>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      { type: "likert", text: "Мне важно, чтобы окружающие восхищались мной", category: "narcissism", tooltip: "Оценивает стремление к внешнему признанию" },
+      { type: "likert", text: "Я часто чувствую беспокойство без видимой причины", category: "nervousness", tooltip: "Оценивает уровень тревожности" },
+      { type: "likert", text: "Я склонен скрывать свои настоящие чувства", category: "emotional", tooltip: "Оценивает эмоциональную открытость" },
+      { type: "likert", text: "Я чувствую, что другие недостаточно ценят меня", category: "narcissism", tooltip: "Оценивает восприятие внешней оценки" },
+      { type: "likert", text: "У меня бывают резкие перепады настроения", category: "emotional", tooltip: "Оценивает эмоциональную стабильность" },
+      { type: "reaction", text: "Нажмите на кнопку, как только она станет фиолетовой.", category: "nervousness", reactionType: "color", tooltip: "Проверяет скорость реакции" },
+      { type: "likert", text: "Мне нравится быть в центре внимания", category: "narcissism", tooltip: "Оценивает потребность во внимании" },
+      { type: "likert", text: "Я часто переживаю из-за мелочей", category: "nervousness", tooltip: "Оценивает склонность к тревоге" },
+      { type: "likert", text: "Я легко справляюсь с эмоциональными трудностями", category: "emotional", reverse: true, tooltip: "Оценивает эмоциональную устойчивость" },
+      { type: "multiple", text: "Как вы реагируете на критику?", category: "narcissism", options: [
+        { text: "Принимаю спокойно", score: 1 },
+        { text: "Чувствую раздражение, но молчу", score: 3 },
+        { text: "Оправдываюсь или спорю", score: 5 }
+      ], tooltip: "Оценивает реакцию на критику" },
+      { type: "likert", text: "Я часто чувствую усталость без причины", category: "nervousness" },
+      { type: "likert", text: "Мои эмоции часто выходят из-под контроля", category: "emotional" },
+      { type: "truefalse", text: "Я считаю себя особенным человеком", category: "narcissism", trueScore: 5, falseScore: 1, tooltip: "Оценивает самооценку" },
+      { type: "likert", text: "Я часто проверяю, всё ли я сделал правильно", category: "nervousness" },
+      { type: "likert", text: "Я редко показываю свои слабости окружающим", category: "emotional" },
+      { type: "ranking", text: "Расставьте приоритеты: что для вас важнее?", category: "narcissism", options: [
+        { text: "Личное признание", score: 5 },
+        { text: "Помощь другим", score: 1 },
+        { text: "Личный комфорт", score: 3 }
+      ], tooltip: "Оценивает приоритеты" },
+      { type: "likert", text: "Я часто чувствую себя неуверенно в обществе", category: "nervousness" },
+      { type: "likert", text: "Я могу легко переключаться между эмоциями", category: "emotional", reverse: true },
+      { type: "reaction", text: "Нажмите на кнопку, когда она станет квадратом.", category: "nervousness", reactionType: "shape", tooltip: "Проверяет скорость реакции" },
+      { type: "likert", text: "Я часто просыпаюсь с чувством тревоги", category: "nervousness" },
+      { type: "likert", text: "Мне трудно делиться своими чувствами", category: "emotional" },
+      { type: "multiple", text: "Что вы чувствуете, когда планы рушатся?", category: "emotional", options: [
+        { text: "Быстро адаптируюсь", score: 1 },
+        { text: "Немного расстраиваюсь", score: 3 },
+        { text: "Сильно переживаю", score: 5 }
+      ]},
+      { type: "likert", text: "Я часто чувствую внутреннее напряжение", category: "nervousness" },
+      { type: "likert", text: "Я могу сохранять спокойствие в стрессовых ситуациях", category: "emotional", reverse: true },
+      { type: "likert", text: "Я часто думаю о том, как выгляжу в глазах других", category: "narcissism" },
+      { type: "reflection", text: "Опишите ситуацию, когда вы чувствовали себя недооценённым. Как вы реагировали?", category: "narcissism", tooltip: "Оценивает восприятие оценки" },
+      { type: "likert", text: "Меня легко вывести из равновесия", category: "nervousness" },
+      { type: "likert", text: "Я редко позволяю эмоциям влиять на мои решения", category: "emotional", reverse: true },
+      { type: "likert", text: "Я люблю, когда мной восхищаются", category: "narcissism" },
+      { type: "likert", text: "Я часто чувствую себя подавленным", category: "nervousness" },
+      { type: "likert", text: "Мне трудно открыться даже близким людям", category: "emotional" },
+      { type: "multiple", text: "Как вы реагируете на похвалу?", category: "narcissism", options: [
+        { text: "Приятно, но не придаю значения", score: 1 },
+        { text: "Радуюсь и жду ещё", score: 3 },
+        { text: "Считаю, что это естественно", score: 5 }
+      ]},
+      { type: "likert", text: "Я часто волнуюсь перед важными событиями", category: "nervousness" },
+      { type: "likert", text: "Я быстро восстанавливаюсь после стресса", category: "emotional", reverse: true },
+      { type: "likert", text: "Я чувствую, что мои успехи недооценивают", category: "narcissism" },
+      { type: "reaction", text: "Нажмите на кнопку, как только она станет фиолетовой.", category: "nervousness", reactionType: "color" },
+      { type: "likert", text: "Я часто чувствую раздражение по мелочам", category: "nervousness" },
+      { type: "likert", text: "Я могу контролировать свои эмоции в любой ситуации", category: "emotional", reverse: true },
+      { type: "truefalse", text: "Мне важно получать похвалу за свою работу", category: "narcissism", trueScore: 5, falseScore: 1 },
+      { type: "likert", text: "Я часто чувствую себя неспокойно", category: "nervousness" },
+      { type: "likert", text: "Я предпочитаю скрывать свои переживания", category: "emotional" },
+      { type: "ranking", text: "Расставьте приоритеты: что помогает справляться со стрессом?", category: "nervousness", options: [
+        { text: "Физическая активность", score: 1 },
+        { text: "Разговор с друзьями", score: 3 },
+        { text: "Одиночество", score: 5 }
+      ]},
+      { type: "likert", text: "Я считаю, что мои идеи лучше, чем у других", category: "narcissism" },
+      { type: "likert", text: "Я часто чувствую себя уязвимым", category: "nervousness" },
+      { type: "likert", text: "Я редко позволяю эмоциям руководить мной", category: "emotional", reverse: true },
+      { type: "multiple", text: "Как вы справляетесь со стрессом?", category: "nervousness", options: [
+        { text: "Спокойно анализирую ситуацию", score: 1 },
+        { text: "Чувствую напряжение, но справляюсь", score: 3 },
+        { text: "Часто теряюсь", score: 5 }
+      ]},
+      { type: "likert", text: "Я часто жду признания своих заслуг", category: "narcissism" },
+      { type: "reflection", text: "Опишите момент, когда вы чувствовали сильную тревогу. Что помогло вам справиться?", category: "nervousness" },
+      { type: "likert", text: "Я могу легко справляться с негативными эмоциями", category: "emotional", reverse: true },
+      { type: "likert", text: "Я чувствую себя лидером в большинстве ситуаций", category: "narcissism" }
+    ];
+
+    let currentQuestion = 0;
+    let answers = { narcissism: 0, nervousness: 0, emotional: 0 };
+    let questionCount = { narcissism: 0, nervousness: 0, emotional: 0 };
+    let reactionStartTime = 0;
+    let reactionScores = [];
+    let rankingOrder = [];
+    let reflectionResponses = [];
+    let selectedMood = null;
+
+    questions.forEach(q => {
+      if (q.type !== "reaction" && q.type !== "ranking" && q.type !== "reflection") {
+        questionCount[q.category]++;
+      }
+    });
+
+    function selectMood(mood) {
+      selectedMood = mood;
+      document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+    }
+
+    function startTest() {
+      const loader = document.getElementById('loader');
+      loader.style.display = 'block';
+      setTimeout(() => {
+        loader.style.display = 'none';
+        document.getElementById('start-screen').setAttribute('aria-hidden', 'true');
+        document.getElementById('quiz-screen').setAttribute('aria-hidden', 'false');
+        showQuestion();
+      }, 1000);
+    }
+
+    function showQuestion() {
+      const question = questions[currentQuestion];
+      const questionEl = document.getElementById('question');
+      const optionsEl = document.getElementById('options');
+      const reactionTestEl = document.getElementById('reaction-test');
+      const rankingEl = document.getElementById('ranking-options');
+      const reflectionEl = document.getElementById('reflection-input');
+      const breathingEl = document.getElementById('breathing-animation');
+      const nextBtn = document.getElementById('next-btn');
+
+      questionEl.innerHTML = `<p>${currentQuestion + 1}. ${question.text}</p>`;
+      optionsEl.innerHTML = '';
+      reactionTestEl.setAttribute('aria-hidden', 'true');
+      rankingEl.setAttribute('aria-hidden', 'true');
+      reflectionEl.setAttribute('aria-hidden', 'true');
+      breathingEl.setAttribute('aria-hidden', 'true');
+      nextBtn.style.display = 'none';
+
+      if (question.type === "likert") {
+        optionsEl.innerHTML = `
+          <div class="option" onclick="selectOption(1)" role="radio" aria-checked="false" tabindex="0"><span>1 (Совсем не согласен)</span><span class="tooltip">${question.tooltip || 'Выберите, насколько согласны'}</span></div>
+          <div class="option" onclick="selectOption(2)" role="radio" aria-checked="false" tabindex="0"><span>2</span><span class="tooltip">${question.tooltip || 'Выберите, насколько согласны'}</span></div>
+          <div class="option" onclick="selectOption(3)" role="radio" aria-checked="false" tabindex="0"><span>3</span><span class="tooltip">${question.tooltip || 'Выберите, насколько согласны'}</span></div>
+          <div class="option" onclick="selectOption(4)" role="radio" aria-checked="false" tabindex="0"><span>4</span><span class="tooltip">${question.tooltip || 'Выберите, насколько согласны'}</span></div>
+          <div class="option" onclick="selectOption(5)" role="radio" aria-checked="false" tabindex="0"><span>5 (Полностью согласен)</span><span class="tooltip">${question.tooltip || 'Выберите, насколько согласны'}</span></div>
+        `;
+      } else if (question.type === "multiple") {
+        question.options.forEach((opt, index) => {
+          optionsEl.innerHTML += `<div class="option" onclick="selectOption(${opt.score})" role="radio" aria-checked="false" tabindex="0"><span>${opt.text}</span><span class="tooltip">${question.tooltip || 'Выберите подходящий вариант'}</span></div>`;
+        });
+      } else if (question.type === "truefalse") {
+        optionsEl.innerHTML = `
+          <div class="option" onclick="selectOption(${question.trueScore})" role="radio" aria-checked="false" tabindex="0"><span>Да</span><span class="tooltip">${question.tooltip || 'Выберите "Да" или "Нет"'}</span></div>
+          <div class="option" onclick="selectOption(${question.falseScore})" role="radio" aria-checked="false" tabindex="0"><span celluloid="Нет" celluloid="Нет"></span><span class="tooltip">${question.tooltip || 'Выберите "Да" или "Нет"'}</span></div>
+        `;
+      } else if (question.type === "reaction") {
+        reactionTestEl.setAttribute('aria-hidden', 'false');
+        document.getElementById('reaction-prompt').textContent = question.text;
+        const reactionBtn = document.getElementById('reaction-btn');
+        reactionBtn.className = 'reaction-btn';
+        if (question.reactionType === "shape") {
+          reactionBtn.classList.add('shape');
+        }
+        optionsEl.innerHTML = '';
+        setTimeout(() => {
+          reactionBtn.classList.add('active');
+          reactionStartTime = performance.now();
+        }, Math.random() * 2000 + 1000);
+      } else if (question.type === "ranking") {
+        rankingEl.setAttribute('aria-hidden', 'false');
+        rankingEl.innerHTML = question.options.map((opt, index) => `
+          <div class="ranking-option" draggable="true" data-index="${index}" role="option">${opt.text}</div>
+        `).join('');
+        setupRanking();
+        nextBtn.style.display = 'block';
+      } else if (question.type === "reflection") {
+        reflectionEl.setAttribute('aria-hidden', 'false');
+        reflectionEl.value = '';
+        nextBtn.style.display = 'block';
+      }
+
+      if (question.category === "nervousness" && question.type !== "reaction") {
+        setTimeout(() => {
+          breathingEl.setAttribute('aria-hidden', 'false');
+          breathingEl.style.display = 'block';
+          setTimeout(() => {
+            breathingEl.style.display = 'none';
+          }, 8000);
+        }, 1000);
+      }
+
+      const progress = document.getElementById('progress');
+      const total = questions.length;
+      const offset = 226 * (1 - (currentQuestion + 1) / total);
+      progress.setAttribute('stroke-dashoffset', offset);
+      document.getElementById('progress-text').textContent = `Задание ${currentQuestion + 1} из ${questions.length}`;
+
+      // Keyboard navigation
+      const options = optionsEl.querySelectorAll('.option');
+      options.forEach(opt => {
+        opt.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            opt.click();
+            e.preventDefault();
+          }
+        });
+      });
+    }
+
+    function selectOption(score) {
+      const options = document.querySelectorAll('.option');
+      options.forEach(opt => {
+        opt.classList.remove('selected');
+        opt.setAttribute('aria-checked', 'false');
+      });
+      const selected = event.currentTarget;
+      selected.classList.add('selected');
+      selected.setAttribute('aria-checked', 'true');
+
+      const question = questions[currentQuestion];
+      if (question.type !== "reaction" && question.type !== "ranking" && question.type !== "reflection") {
+        answers[question.category] += question.reverse ? (6 - score) : score;
+      }
+      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('next-btn').focus();
+    }
+
+    function recordReaction() {
+      const question = questions[currentQuestion];
+      const reactionBtn = document.getElementById('reaction-btn');
+      if (!reactionBtn.classList.contains('active')) return;
+      const reactionTime = performance.now() - reactionStartTime;
+      const score = reactionTime < 300 ? 1 : reactionTime < 600 ? 3 : 5;
+      reactionScores.push(score);
+      answers.nervousness += score;
+      reactionBtn.classList.remove('active');
+      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('next-btn').focus();
+    }
+
+    function setupRanking() {
+      const rankingEl = document.getElementById('ranking-options');
+      const items = rankingEl.querySelectorAll('.ranking-option');
+      items.forEach(item => {
+        item.addEventListener('dragstart', () => item.classList.add('dragging'));
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        item.addEventListener('dragover', e => e.preventDefault());
+        item.addEventListener('drop', e => {
+          e.preventDefault();
+          const dragged = rankingEl.querySelector('.dragging');
+          const afterElement = getDragAfterElement(rankingEl, e.clientY);
+          if (afterElement == null) {
+            rankingEl.appendChild(dragged);
+          } else {
+            rankingEl.insertBefore(dragged, afterElement);
+          }
+        });
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.ranking-option:not(.dragging)')];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function nextQuestion() {
+      const question = questions[currentQuestion];
+      if (question.type === "ranking") {
+        const rankingEl = document.getElementById('ranking-options');
+        const items = rankingEl.querySelectorAll('.ranking-option');
+        let score = 0;
+        items.forEach((item, index) => {
+          const originalIndex = parseInt(item.getAttribute('data-index'));
+          score += question.options[originalIndex].score * (items.length - index);
+        });
+        answers[question.category] += score / items.length;
+      } else if (question.type === "reflection") {
+        const response = document.getElementById('reflection-input').value.trim();
+        if (response) {
+          const score = response.length > 100 ? 5 : response.length > 50 ? 3 : 1;
+          answers[question.category] += score;
+          reflectionResponses.push({ question: question.text, response });
+        }
+      }
+
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        showQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      const loader = document.getElementById('loader');
+      loader.style.display = 'block';
+      setTimeout(() => {
+        loader.style.display = 'none';
+        document.getElementById('quiz-screen').setAttribute('aria-hidden', 'true');
+        document.getElementById('result-screen').setAttribute('aria-hidden', 'false');
+        launchConfetti();
+      }, 1000);
+
+      const narcissismScore = (answers.narcissism / (questionCount.narcissism * 5)) * 100;
+      const nervousnessScore = ((answers.nervousness + (reactionScores.reduce((a, b) => a + b, 0) || 0)) / ((questionCount.nervousness + reactionScores.length) * 5)) * 100;
+      const emotionalScore = (answers.emotional / (questionCount.emotional * 5)) * 100;
+
+      const narcissismLevel = narcissismScore < 40 ? 'Низкий' : narcissismScore < 70 ? 'Средний' : 'Высокий';
+      const nervousnessLevel = nervousnessScore < 40 ? 'Низкая' : nervousnessScore < 70 ? 'Повышенная' : 'Тревожная';
+      const emotionalLevel = emotionalScore < 40 ? 'Стабильный' : emotionalScore < 70 ? 'Нестабильный' : 'Перегружен';
+
+      let moodRecommendation = '';
+      if (selectedMood === '😊') {
+        moodRecommendation = 'Ваше позитивное настроение усиливает ваши результаты. Продолжайте поддерживать этот настрой!';
+      } else if (selectedMood === '😐') {
+        moodRecommendation = 'Ваше нейтральное настроение позволяет объективно оценить результаты. Используйте их для дальнейшего роста.';
+      } else if (selectedMood === '😔') {
+        moodRecommendation = 'Ваше текущее настроение может быть временным. Попробуйте техники релаксации и заботы о себе.';
+      }
+
+      document.getElementById('results').innerHTML = `
+        <div class="result-block">
+          <h3>Уровень нарциссизма: ${narcissismLevel} (${Math.round(narcissismScore)}%)</h3>
+          <div class="result-bar narcissism" style="width: ${narcissismScore}%"></div>
+          <p class="recommendation">${getRecommendation('narcissism', narcissismLevel)}</p>
+        </div>
+        <div class="result-block">
+          <h3>Нервозность: ${nervousnessLevel} (${Math.round(nervousnessScore)}%)</h3>
+          <div class="result-bar nervousness" style="width: ${nervousnessScore}%"></div>
+          <p class="recommendation">${getRecommendation('nervousness', nervousnessLevel)}</p>
+        </div>
+        <div class="result-block">
+          <h3>Эмоциональное состояние: ${emotionalLevel} (${Math.round(emotionalScore)}%)</h3>
+          <div class="result-bar emotional" style="width: ${emotionalScore}%"></div>
+          <p class="recommendation">${getRecommendation('emotional', emotionalLevel)}</p>
+        </div>
+        ${moodRecommendation ? `<div class="result-block"><h3>Ваше настроение</h3><p>${moodRecommendation}</p></div>` : ''}
+        <div class="result-block">
+          <h3>Ваши рефлексии</h3>
+          <p>${reflectionResponses.length > 0 ? reflectionResponses.map(r => `<strong>${r.question}</strong><br>${r.response}`).join('<br><br>') : 'Вы не предоставили рефлексивных ответов.'}</p>
+        </div>
+      `;
+
+      drawRadarChart(narcissismScore, nervousnessScore, emotionalScore);
+    }
+
+    function getRecommendation(category, level) {
+      const recommendations = {
+        narcissism: {
+          Низкий: 'Вы проявляете здоровую скромность и уважение к окружающим. Ваша способность ценить других делает вас отличным командным игроком. Продолжайте развивать эмпатию и поддерживать гармоничные отношения.',
+          Средний: 'У вас здоровая уверенность в себе, но иногда вы можете стремиться к внешнему признанию. Попробуйте сосредоточиться на внутренней мотивации и практиковать благодарность за поддержку окружающих.',
+          Высокий: 'Ваша уверенность заметна и может вдохновлять, но иногда воспринимается как эгоцентричность. Рекомендуем развивать активное слушание и больше внимания уделять чувствам других.'
+        },
+        nervousness: {
+          Низкая: 'Вы демонстрируете впечатляющую устойчивость к стрессу, что позволяет вам сохранять спокойствие даже в сложных ситуациях. Это ваш мощный ресурс для ментального здоровья!',
+          Повышенная: 'Иногда вы ощущаете тревогу, что является нормальной реакцией. Попробуйте техники релаксации, такие как глубокое дыхание, медитация или прогулки на природе, чтобы снизить напряжение.',
+          Тревожная: 'Высокий уровень тревожности может влиять на ваше самочувствие. Рекомендуем обратиться к психологу или попробовать практики mindfulness, йогу или регулярные физические упражнения для управления стрессом.'
+        },
+        emotional: {
+          Стабильный: 'Вы отлично управляете своими эмоциями, что помогает справляться с жизненными вызовами. Продолжайте поддерживать этот баланс через осознанность и заботу о себе.',
+          Нестабильный: 'Ваши эмоции иногда колеблются, что может быть связано со стрессом. Практики ведения дневника, медитации или разговоры с близкими помогут стабилизировать ваше состояние.',
+          Перегружен: 'Ваши эмоции могут быть интенсивными и иногда выходить из-под контроля. Рекомендуем выделять время для отдыха, консультации с психологом и практики заботы о себе, такие как хобби или релаксация.'
+        }
+      };
+      return recommendations[category][level];
+    }
+
+    function drawRadarChart(narcissism, nervousness, emotional) {
+      const canvas = document.getElementById('result-chart');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 600;
+      canvas.height = 400;
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = 150;
+
+      // Draw radar background
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - radius);
+      ctx.lineTo(centerX + radius * Math.cos(2 * Math.PI / 3), centerY + radius * Math.sin(2 * Math.PI / 3));
+      ctx.lineTo(centerX + radius * Math.cos(4 * Math.PI / 3), centerY + radius * Math.sin(4 * Math.PI / 3));
+      ctx.closePath();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw data
+      const narcRad = (narcissism / 100) * radius;
+      const nervRad = (nervousness / 100) * radius;
+      const emoRad = (emotional / 100) * radius;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - narcRad);
+      ctx.lineTo(centerX + nervRad * Math.cos(2 * Math.PI / 3), centerY + nervRad * Math.sin(2 * Math.PI / 3));
+      ctx.lineTo(centerX + emoRad * Math.cos(4 * Math.PI / 3), centerY + emoRad * Math.sin(4 * Math.PI / 3));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(159, 122, 234, 0.3)';
+      ctx.fill();
+      ctx.strokeStyle = '#9f7aea';
+      ctx.stroke();
+
+      // Labels
+      ctx.fillStyle = '#2d3748';
+      ctx.font = '16px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText('Нарциссизм', centerX, centerY - radius - 20);
+      ctx.fillText('Нервозность', centerX + radius * Math.cos(2 * Math.PI / 3) + 60, centerY + radius * Math.sin(2 * Math.PI / 3));
+      ctx.fillText('Эмоции', centerX + radius * Math.cos(4 * Math.PI / 3) - 60, centerY + radius * Math.sin(4 * Math.PI / 3));
+
+      // Percentage markers
+      ctx.font = '12px Inter';
+      for (let i = 20; i <= 100; i += 20) {
+        const r = (i / 100) * radius;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.stroke();
+        ctx.fillText(`${i}%`, centerX, centerY - r - 10);
+      }
+    }
+
+    function exportResults() {
+      const results = document.getElementById('results').innerHTML;
+      const blob = new Blob([`
+        <!DOCTYPE html>
+        <html lang="ru">
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { color: #2d3748; }
+            .result-block { margin: 20px 0; padding: 15px; background: #f7fafc; border-radius: 10px; }
+            h3 { color: #2d3748; }
+            .recommendation { color: #4a5568; }
+          </style>
+        </head>
+        <body>
+          <h1>Результаты психологического теста</h1>
+          ${results}
+        </body>
+        </html>
+      `], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Psychological_Test_Results.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function shareResults() {
+      const results = document.getElementById('results').innerText;
+      const shareText = `Мои результаты психологического теста:\n${results}\nПройдите тест на https://example.com!`;
+      navigator.clipboard.writeText(shareText).then(() => {
+        alert('Результаты скопированы в буфер обмена!');
+      });
+    }
+
+    function launchConfetti() {
+      const canvas = document.createElement('canvas');
+      canvas.style.position = 'fixed';
+      canvas.style.top = '0';
+      canvas.style.left = '0';
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+      canvas.style.pointerEvents = 'none';
+      document.body.appendChild(canvas);
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const ctx = canvas.getContext('2d');
+      const particles = [];
+      for (let i = 0; i < 50; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 5 + 2,
+          speedX: Math.random() * 3 - 1.5,
+          speedY: Math.random() * 3 - 1.5,
+          color: ['#9f7aea', '#4299e1', '#b794f4'][Math.floor(Math.random() * 3)]
+        });
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          p.x += p.speedX;
+          p.y += p.speedY;
+          p.size *= 0.98;
+        });
+        if (particles[0].size > 0.1) {
+          requestAnimationFrame(animate);
+        } else {
+          document.body.removeChild(canvas);
+        }
+      }
+      animate();
+    }
+
+    function restartTest() {
+      const loader = document.getElementById('loader');
+      loader.style.display = 'block';
+      setTimeout(() => {
+        loader.style.display = 'none';
+        currentQuestion = 0;
+        answers = { narcissism: 0, nervousness: 0, emotional: 0 };
+        reactionScores = [];
+        rankingOrder = [];
+        reflectionResponses = [];
+        selectedMood = null;
+        document.getElementById('result-screen').setAttribute('aria-hidden', 'true');
+        document.getElementById('start-screen').setAttribute('aria-hidden', 'false');
+      }, 1000);
+    }
+
+    // Keyboard navigation for start button and mood tracker
+    document.querySelectorAll('.btn, .mood-option').forEach(el => {
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          el.click();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
